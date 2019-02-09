@@ -32,6 +32,13 @@ void initClient() {
 		printf("Client can NOT initialize WSAStartup, error: %d\n", WSAGetLastError());
 		exit(-3);
 	}
+	
+	//Create tcp socket
+	SOCKET sockTCP;
+	if ((sockTCP = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) == INVALID_SOCKET){
+		//error
+		printf("Client can NOT create socket, error: %d\n", WSAGetLastError());
+	}
 }
 //---------------------------------------------------------------------------
 void initServer() {
