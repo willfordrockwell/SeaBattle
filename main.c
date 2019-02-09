@@ -10,34 +10,45 @@
 #include <netinet/in.h>
 #include <stdlib.h>
 #include <sys/socket.h>
-
 //---------------------------------------------------------------------------
-int main (int argc, char *argv[]) {
+void checkArgs() {
 	if (argc < 2) {
 		printf("Enter argument: 0 for client (Second player), 1 for server (First player)");
-		return -1;
+		exit(-1);
 	}
+}
+//---------------------------------------------------------------------------
+void initClient() {
+	printf("Enter server's IP (example): ");
+	scanf();
+	
+	//Init socket
+	struct WSAData WS;
+	if (FAILED(WSAStartup(0x202, (WSADATA *)&WS))){
+		//Error
+		printf("Client can NOT initialize WSAStartup, error: %d\n", WSAGetLastError());
+		exit(-3);
+	}
+		
+	//Create windows socket
+	SOCKET sockTCP;
+	if ((sockTCP = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) == INVALID_SOCKET){
+		//Error
+		printf("Client can NOT create socket, error: %d\n", WSAGetLastError());
+		exit(-4);
+	}
+}
+//---------------------------------------------------------------------------
+void initServer() {
+	
+}
+//---------------------------------------------------------------------------
+int main (int argc, char *argv[]) { //Server: 1 serverPort; Client: 0 serverIP serverPort
+	checkArgs()
 	
 	if (atoi(argv[1]) == 0) {
 		//Client code
-		printf("Enter server's IP (example): ");
-		scanf();
-		
-		//Init socket
-		struct WSAData WS;
-		if (FAILED(WSAStartup(0x202, (WSADATA *)&WS))){
-			//Error
-			printf("Client can NOT initialize WSAStartup, error: %d\n", WSAGetLastError());
-			return -3;
-		}
-		
-		//Create windows socket
-		SOCKET sockTCP;
-		if ((sockTCP = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) == INVALID_SOCKET){
-			//Error
-			printf("Client can NOT create socket, error: %d\n", WSAGetLastError());
-			return -4;
-		}
+		initClient();
 	}
 	else if (atoi(argv[1]) == 1) {
 		//Server code
