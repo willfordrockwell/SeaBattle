@@ -6,6 +6,10 @@
 #include <unistd.h>
 #include <winsock2.h>
 #include <windows.h> 
+
+#define IPLENGTH 16
+#define PORTLENGTH 5
+
 //---------------------------------------------------------------------------
 void checkArgs(int argc) {	//Num of args
 	if (argc < 2) {
@@ -15,9 +19,11 @@ void checkArgs(int argc) {	//Num of args
 }
 //---------------------------------------------------------------------------
 void initClient() {
-	char serverIP[16];
-	printf("Enter server's IP (example): ");
+	char serverIP[IPLENGTH], serverPort[PORTLENGTH];
+	printf("Enter server's IP (example: 127.0.0.1): ");
 	scanf("%s", &serverIP);
+	printf("Enter server's port (example: 12345): ");
+	scanf("%s", &serverPort);
 }
 //---------------------------------------------------------------------------
 void initServer() {
