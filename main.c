@@ -24,6 +24,14 @@ void initClient() {
 	scanf("%s", &serverIP);
 	printf("Enter server's port (example: 12345): ");
 	scanf("%s", &serverPort);
+	
+	//Init Winsock
+	struct WSAData WS;
+	if (WSAStartup(0x202, (WSADATA *)&WS)){
+		//Error
+		printf("Client can NOT initialize WSAStartup, error: %d\n", WSAGetLastError());
+		exit(-3);
+	}
 }
 //---------------------------------------------------------------------------
 void initServer() {
