@@ -27,7 +27,7 @@ void initClient() {
 	
 	//Init Winsock
 	struct WSAData WS;
-	if (WSAStartup(0x202, (WSADATA *)&WS)){
+	if (FAILED(WSAStartup(0x202, (WSADATA *)&WS))){
 		//Error
 		printf("Client can NOT initialize WSAStartup, error: %d\n", WSAGetLastError());
 		exit(-3);
