@@ -138,7 +138,6 @@ void drawBattleField(
 	printf("   0|1|2|3|4|5|6|7|8|9|   0|1|2|3|4|5|6|7|8|9|\n");
 	for (int i = 0; i < FIELDSIDE; i++){
 		printf("  ---------------------  ---------------------\n");
-		//printf("  # # # # # # # # # # #  # # # # # # # # # # #\n");
 		printf("%c |", i + 65);
 		for (int j = 0; j < 2 * FIELDSIDE + 1; j++){
 			if (j < FIELDSIDE)
@@ -154,7 +153,6 @@ void drawBattleField(
 				else 													{ printf("X|");}
 			}
 		}
-		//printf("\n  # # # # # # # # # # #  # # # # # # # # # # #\n");
 		printf("\n");
 	}
 	printf("  ---------------------  ---------------------\n");
@@ -168,7 +166,14 @@ void drawBattleField(
 	}
 }
 //---------------------------------------------------------------------------
-
+enum turn changeTurn(enum turn playerTurn){
+	enum turn temp;
+	if (playerTurn == ENEMY)
+		temp = PLAYER;
+	else
+		temp = ENEMY;
+	return temp;
+}
 //---------------------------------------------------------------------------
 int main (int argc, char *argv[]) {	//Server: 1; Client: 0
 	checkArgs(argc);
@@ -184,10 +189,11 @@ int main (int argc, char *argv[]) {	//Server: 1; Client: 0
 	if (atoi(argv[1]) == 1)	playerTurn = PLAYER;
 	else				playerTurn = ENEMY;
 	int endGame = 0;
-	unsigned int playerScore, enemyScore = 0;
+	unsigned int playerScore = 0, enemyScore = 0;
 	char move[MOVESIZE];
 	while(!endGame) {
 		drawBattleField(playerBattleField, enemyBattleField, playerScore, enemyScore, playerTurn, move);
+		playerTurn = changeTurn(playerTurn);
 	}
 	return 0;
 }
