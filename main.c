@@ -43,18 +43,26 @@ void initClient() {
 	}
 	
 	//Fill struct sockaddr_in
-	struct sockaddr_in dest_addr;
+	struct sockaddr_in dest_addr;						//struck holding info about server
 	ZeroMemory(&dest_addr, sizeof(dest_addr));
-    dest_addr.sin_family = AF_INET;
-    dest_addr.sin_port = htons(atoi(serverPort));
-    dest_addr.sin_addr.s_addr = inet_addr(serverIP); //convert IP from symbol to network format
+    dest_addr.sin_family = AF_INET;						//Using not raw socket
+    dest_addr.sin_port = htons(atoi(serverPort));		//convert port from symbol to nework format
+    dest_addr.sin_addr.s_addr = inet_addr(serverIP); 	//convert IP from symbol to network format
+	
+	//Try to connect
+	if (connect(sockTCP, (struct sockaddr *)&dest_addr, sizeof(dest_addr))) {
+        printf("Connect error %d\n", WSAGetLastError());
+        exit(-5);
+    }
+	printf("Connect with %s succed\nType quit for quit\n\n", serverIP);
+
 }
 //---------------------------------------------------------------------------
 void initServer() {
 	
 }
 //---------------------------------------------------------------------------
-int main (int argc, char *argv[]) { //Server: 1 serverPort; Client: 0 serverIP serverPort
+int main (int argc, char *argv[]) {	//Server: 1 serverPort; Client: 0 serverIP serverPort
 	checkArgs(argc);
 	
 	if (atoi(argv[1]) == 0) {
