@@ -95,6 +95,14 @@ void initServer() {
 		WSACleanup();
 		exit(-5);
     }
+	//Init queue to listen from clients
+	if (listen(sockTCP, queueLength))	{
+		//Error
+		printf("Error listen %d\n",WSAGetLastError());
+		closesocket(sockTCP);
+		WSACleanup();
+		exit(-6);
+    }
 }
 //---------------------------------------------------------------------------
 int main (int argc, char *argv[]) {	//Server: 1 serverPort; Client: 0 serverIP serverPort
