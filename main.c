@@ -45,7 +45,7 @@ void initClient() {
 	//Fill struct sockaddr_in
 	struct sockaddr_in dest_addr;						//struck holding info about server
 	ZeroMemory(&dest_addr, sizeof(dest_addr));
-    dest_addr.sin_family = AF_INET;						//Using not raw socket
+    dest_addr.sin_family = AF_INET;						//Using IPv4
     dest_addr.sin_port = htons(atoi(serverPort));		//convert port from symbol to nework format
     dest_addr.sin_addr.s_addr = inet_addr(serverIP); 	//convert IP from symbol to network format
 	
@@ -64,6 +64,15 @@ void initServer() {
 		//Error
 		printf("Client can NOT initialize WSAStartup, error: %d\n", WSAGetLastError());
 		exit(-3);
+	}
+	
+	//Create tcp socket
+	SOCKET sockTCP;
+	if ((sockTCP = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) == INVALID_SOCKET){
+		//Error
+		printf("Client can NOT create socket, error: %d\n", WSAGetLastError());
+		WSACleanup();
+		exit(-4);
 	}
 }
 //---------------------------------------------------------------------------
