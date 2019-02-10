@@ -10,6 +10,10 @@
 #define IPLENGTH 16
 #define PORTLENGTH 5
 
+#define FIELDSIDE 10
+
+enum battleField {EMPTY, MISS, HIT};
+
 //---------------------------------------------------------------------------
 void checkArgs(int argc) {	//Num of args
 	if (argc < 2) {
@@ -54,7 +58,7 @@ void initClient() {
         printf("Connect error %d\n", WSAGetLastError());
         exit(-5);
     }
-	printf("Connect with %s succed\nType quit for quit\n\n", serverIP);
+	printf("Connect with %s succed\n\n", serverIP);
 }
 //---------------------------------------------------------------------------
 void initServer() {
@@ -105,9 +109,7 @@ void initServer() {
     }
 }
 //---------------------------------------------------------------------------
-int main (int argc, char *argv[]) {	//Server: 1 serverPort; Client: 0 serverIP serverPort
-	checkArgs(argc);
-	
+void initConnection(char *argv[]){
 	if (atoi(argv[1]) == 0) {
 		//Client code
 		initClient();
@@ -119,7 +121,17 @@ int main (int argc, char *argv[]) {	//Server: 1 serverPort; Client: 0 serverIP s
 	else {
 		//WTF code
 		printf("Enter argument: 0 for client (Second player), 1 for server (First player)");
-		return -2;
+		exit(-2);
 	}
+}
+//---------------------------------------------------------------------------
+void drawBattleField(byte *battleField[]){
+	
+}
+//---------------------------------------------------------------------------
+int main (int argc, char *argv[]) {	//Server: 1 serverPort; Client: 0 serverIP serverPort
+	checkArgs(argc);
+	initConnection(argv);
+	enum battleField playerBattleField[FIELDSIDE][FIELDSIDE], enemyBattleField[FIELDSIDE][FIELDSIDE];
 	return 0;
 }
