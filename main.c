@@ -55,11 +55,16 @@ void initClient() {
         exit(-5);
     }
 	printf("Connect with %s succed\nType quit for quit\n\n", serverIP);
-
 }
 //---------------------------------------------------------------------------
 void initServer() {
-	
+	//Init Winsock
+	struct WSAData WS;
+	if (FAILED(WSAStartup(0x202, (WSADATA *)&WS))){
+		//Error
+		printf("Client can NOT initialize WSAStartup, error: %d\n", WSAGetLastError());
+		exit(-3);
+	}
 }
 //---------------------------------------------------------------------------
 int main (int argc, char *argv[]) {	//Server: 1 serverPort; Client: 0 serverIP serverPort
