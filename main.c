@@ -24,6 +24,7 @@ void initClient() {
 	scanf("%s", &serverIP);
 	printf("Enter server's port (example: 12345): ");
 	scanf("%s", &serverPort);
+	//TODO: VERIFY STRINGS
 	
 	//Init Winsock
 	struct WSAData WS;
@@ -36,9 +37,17 @@ void initClient() {
 	//Create tcp socket
 	SOCKET sockTCP;
 	if ((sockTCP = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) == INVALID_SOCKET){
-		//error
+		//Error
 		printf("Client can NOT create socket, error: %d\n", WSAGetLastError());
+		exit(-4);
 	}
+	
+	//Fill struct sockaddr_in
+	struct sockaddr_in dest_addr;
+	ZeroMemory(&dest_addr, sizeof(dest_addr));
+    dest_addr.sin_family = AF_INET;
+    dest_addr.sin_port = htons(atoi(serverPort));
+    dest_addr.sin_addr.s_addr = inet_addr(serverIP); //convert IP from symbol to network format
 }
 //---------------------------------------------------------------------------
 void initServer() {
