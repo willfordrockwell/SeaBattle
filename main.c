@@ -32,7 +32,7 @@ void initClient() {
 	
 	//Init Winsock
 	struct WSAData WS;
-	if (FAILED(WSAStartup(0x202, (WSADATA *)&WS))){
+	if (FAILED(WSAStartup(0x202, (WSADATA *)&WS))) {
 		//Error
 		printf("Client can NOT initialize WSAStartup, error: %d\n", WSAGetLastError());
 		exit(-3);
@@ -40,7 +40,7 @@ void initClient() {
 	
 	//Create tcp socket
 	SOCKET sockTCP;
-	if ((sockTCP = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) == INVALID_SOCKET){
+	if ((sockTCP = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) == INVALID_SOCKET) {
 		//Error
 		printf("Client can NOT create socket, error: %d\n", WSAGetLastError());
 		exit(-4);
@@ -69,7 +69,7 @@ void initServer() {
 	
 	//Init Winsock
 	struct WSAData WS;
-	if (FAILED(WSAStartup(0x202, (WSADATA *)&WS))){
+	if (FAILED(WSAStartup(0x202, (WSADATA *)&WS))) {
 		//Error
 		printf("Client can NOT initialize WSAStartup, error: %d\n", WSAGetLastError());
 		exit(-3);
@@ -77,7 +77,7 @@ void initServer() {
 	
 	//Create tcp socket
 	SOCKET sockTCP;
-	if ((sockTCP = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) == INVALID_SOCKET){
+	if ((sockTCP = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) == INVALID_SOCKET) {
 		//Error
 		printf("Client can NOT create socket, error: %d\n", WSAGetLastError());
 		WSACleanup();
@@ -92,7 +92,7 @@ void initServer() {
     local_addr.sin_addr.s_addr = INADDR_ANY; 			//Any connection to server
 	
 	//Bind to connect
-	if (bind(sockTCP,(struct sockaddr *) &local_addr,sizeof(local_addr)))	{
+	if (bind(sockTCP,(struct sockaddr *) &local_addr,sizeof(local_addr))) {
 		//Error
 		printf("Error bind %d\n",WSAGetLastError());
 		closesocket(sockTCP);  							//Close socket
@@ -100,7 +100,7 @@ void initServer() {
 		exit(-5);
     }
 	//Init queue to listen from clients
-	if (listen(sockTCP, queueLength))	{
+	if (listen(sockTCP, queueLength)) {
 		//Error
 		printf("Error listen %d\n",WSAGetLastError());
 		closesocket(sockTCP);
@@ -125,13 +125,46 @@ void initConnection(char *argv[]){
 	}
 }
 //---------------------------------------------------------------------------
-void drawBattleField(byte *battleField[]){
-	
+void drawBattleField(enum battleField playerBattleField[][FIELDSIDE], enum battleField enemyBattleField[][FIELDSIDE]){
+	system("cls");
+	printf("   0|1|2|3|4|5|6|7|8|9|   0|1|2|3|4|5|6|7|8|9|\n");
+	for (int i = 0; i < FIELDSIDE; i++){
+		printf("  ---------------------  ---------------------\n");
+		//printf("  # # # # # # # # # # #  # # # # # # # # # # #\n");
+		printf("%c |", i + 65);
+		for (int j = 0; j < 2 * FIELDSIDE + 1; j++){
+			if (j < FIELDSIDE)
+				if (playerBattleField[i][j] == EMPTY)		{ printf(" |");}
+				else if (playerBattleField[i][j] == MISS)	{ printf("*|");}
+				else 										{ printf("X|");}
+			else if (j == FIELDSIDE) {
+				printf(" %c|", i + 65);
+			}
+			else if (j > FIELDSIDE)	{
+				if (enemyBattleField[i][j - FIELDSIDE] == EMPTY)		{ printf(" |");}
+				else if (enemyBattleField[i][j - FIELDSIDE] == MISS)	{ printf("*|");}
+				else 													{ printf("X|");}
+			}
+		}
+		//printf("\n  # # # # # # # # # # #  # # # # # # # # # # #\n");
+		printf("\n");
+	}
+	printf("  ---------------------  ---------------------\n");
 }
 //---------------------------------------------------------------------------
 int main (int argc, char *argv[]) {	//Server: 1 serverPort; Client: 0 serverIP serverPort
 	checkArgs(argc);
 	initConnection(argv);
 	enum battleField playerBattleField[FIELDSIDE][FIELDSIDE], enemyBattleField[FIELDSIDE][FIELDSIDE];
+	for(int i = 0; i < FIELDSIDE; i++)	{		//Init battlefields with EMPTY
+		for(int j = 0; j < FIELDSIDE; j++)	{
+			playerBattleField[i][j] = EMPTY;
+			enemyBattleField[i][j] = EMPTY;
+		}
+	}
+	int endGame = 0;
+	while(!endGame) {
+		drawBattleField(playerBattleField, enemyBattleField);
+	}
 	return 0;
 }
