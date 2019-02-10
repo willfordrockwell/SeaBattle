@@ -58,6 +58,10 @@ void initClient() {
 }
 //---------------------------------------------------------------------------
 void initServer() {
+	char serverPort[PORTLENGTH];
+	printf("Enter server's port (example: 12345): ");
+	scanf("%s", &serverPort);
+	
 	//Init Winsock
 	struct WSAData WS;
 	if (FAILED(WSAStartup(0x202, (WSADATA *)&WS))){
@@ -74,6 +78,13 @@ void initServer() {
 		WSACleanup();
 		exit(-4);
 	}
+	
+	//Fill struct sockaddr_in
+	struct sockaddr_in local_addr;						//struck holding info about server
+	ZeroMemory(&local_addr, sizeof(local_addr));
+    local_addr.sin_family = AF_INET;					//Using IPv4
+    local_addr.sin_port = htons(atoi(serverPort));		//convert port from symbol to nework format
+    local_addr.sin_addr.s_addr = INADDR_ANY; 			//Any connection to server
 }
 //---------------------------------------------------------------------------
 int main (int argc, char *argv[]) {	//Server: 1 serverPort; Client: 0 serverIP serverPort
