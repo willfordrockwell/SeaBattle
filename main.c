@@ -59,6 +59,7 @@ void initClient() {
 //---------------------------------------------------------------------------
 void initServer() {
 	char serverPort[PORTLENGTH];
+	const int queueLength = 1;
 	printf("Enter server's port (example: 12345): ");
 	scanf("%s", &serverPort);
 	
@@ -85,6 +86,15 @@ void initServer() {
     local_addr.sin_family = AF_INET;					//Using IPv4
     local_addr.sin_port = htons(atoi(serverPort));		//convert port from symbol to nework format
     local_addr.sin_addr.s_addr = INADDR_ANY; 			//Any connection to server
+	
+	//Bind to connect
+	if (bind(sockTCP,(struct sockaddr *) &local_addr,sizeof(local_addr)))	{
+		//Error
+		printf("Error bind %d\n",WSAGetLastError());
+		closesocket(sockTCP);  							//Close socket
+		WSACleanup();
+		exit(-5);
+    }
 }
 //---------------------------------------------------------------------------
 int main (int argc, char *argv[]) {	//Server: 1 serverPort; Client: 0 serverIP serverPort
