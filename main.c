@@ -12,8 +12,10 @@
 
 #define FIELDSIDE 10
 
-enum battleField {EMPTY, MISS, HIT};
+#define MOVESIZE 10
 
+enum battleField {EMPTY, MISS, HIT};
+enum turn {PLAYER, ENEMY};
 //---------------------------------------------------------------------------
 void checkArgs(int argc) {	//Num of args
 	if (argc < 2) {
@@ -125,7 +127,13 @@ void initConnection(char *argv[]){
 	}
 }
 //---------------------------------------------------------------------------
-void drawBattleField(enum battleField playerBattleField[][FIELDSIDE], enum battleField enemyBattleField[][FIELDSIDE]){
+void drawBattleField(
+					enum battleField playerBattleField[][FIELDSIDE], 
+					enum battleField enemyBattleField[][FIELDSIDE], 
+					unsigned int playerScore, 
+					unsigned int enemyScore, 
+					enum turn playerTurn, 
+					char *move){
 	system("cls");
 	printf("   0|1|2|3|4|5|6|7|8|9|   0|1|2|3|4|5|6|7|8|9|\n");
 	for (int i = 0; i < FIELDSIDE; i++){
@@ -150,9 +158,19 @@ void drawBattleField(enum battleField playerBattleField[][FIELDSIDE], enum battl
 		printf("\n");
 	}
 	printf("  ---------------------  ---------------------\n");
+	printf("Your score: %d\nEnemy score: %d\n", playerScore, enemyScore);
+	if (playerTurn == PLAYER) 	{
+		printf("Your turn\nEnter position for FIRE like 'A4' or \n'SURRENDER' to SURRENDER:");
+		scanf("%s", move);
+	}
+	else {
+		printf("Wait for your enemy to FIRE");
+	}
 }
 //---------------------------------------------------------------------------
-int main (int argc, char *argv[]) {	//Server: 1 serverPort; Client: 0 serverIP serverPort
+
+//---------------------------------------------------------------------------
+int main (int argc, char *argv[]) {	//Server: 1; Client: 0
 	checkArgs(argc);
 	initConnection(argv);
 	enum battleField playerBattleField[FIELDSIDE][FIELDSIDE], enemyBattleField[FIELDSIDE][FIELDSIDE];
@@ -162,9 +180,14 @@ int main (int argc, char *argv[]) {	//Server: 1 serverPort; Client: 0 serverIP s
 			enemyBattleField[i][j] = EMPTY;
 		}
 	}
+	enum turn playerTurn;
+	if (atoi(argv[1]) == 1)	playerTurn = PLAYER;
+	else				playerTurn = ENEMY;
 	int endGame = 0;
+	unsigned int playerScore, enemyScore = 0;
+	char move[MOVESIZE];
 	while(!endGame) {
-		drawBattleField(playerBattleField, enemyBattleField);
+		drawBattleField(playerBattleField, enemyBattleField, playerScore, enemyScore, playerTurn, move);
 	}
 	return 0;
 }
