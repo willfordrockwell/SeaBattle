@@ -13,9 +13,12 @@
 #define FIELDSIDE 10
 
 #define MOVESIZE 10
+#define AXESSIZE 3
 
-enum battleField {EMPTY, MISS, HIT};
+enum battleField {EMPTY, MISS, HIT, SHIP};
 enum turn {PLAYER, ENEMY};
+enum moveResult {WRONG_MOVE, MISS_MOVE, HIT_MOVE, KILL_MOVE, SURRENDER};
+struct axes {int x; int y;} axesField;
 //---------------------------------------------------------------------------
 void checkArgs(int argc) {	//Num of args
 	if (argc < 2) {
@@ -24,7 +27,7 @@ void checkArgs(int argc) {	//Num of args
 	}
 }
 //---------------------------------------------------------------------------
-void initClient() {
+SOCKET initClient() {
 	char serverIP[IPLENGTH], serverPort[PORTLENGTH];
 	printf("Enter server's IP (example: 127.0.0.1): ");
 	scanf("%s", &serverIP);
@@ -35,16 +38,14 @@ void initClient() {
 	//Init Winsock
 	struct WSAData WS;
 	if (FAILED(WSAStartup(0x202, (WSADATA *)&WS))) {
-		//Error
-		printf("Client can NOT initialize WSAStartup, error: %d\n", WSAGetLastError());
+		printf("Client can NOT initialize WSAStartup, error: %d\n", WSAGetLastError());	//Error
 		exit(-3);
 	}
 	
 	//Create tcp socket
 	SOCKET sockTCP;
 	if ((sockTCP = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) == INVALID_SOCKET) {
-		//Error
-		printf("Client can NOT create socket, error: %d\n", WSAGetLastError());
+		printf("Client can NOT create socket, error: %d\n", WSAGetLastError());	//Error
 		exit(-4);
 	}
 	
@@ -57,13 +58,13 @@ void initClient() {
 	
 	//Try to connect
 	if (connect(sockTCP, (struct sockaddr *)&dest_addr, sizeof(dest_addr))) {
-        printf("Connect error %d\n", WSAGetLastError());
+        printf("Connect error %d\n", WSAGetLastError());	//Error
         exit(-5);
     }
-	printf("Connect with %s succed\n\n", serverIP);
+	return sockTCP;
 }
 //---------------------------------------------------------------------------
-void initServer() {
+SOCKET initServer() {
 	char serverPort[PORTLENGTH];
 	const int queueLength = 1;
 	printf("Enter server's port (example: 12345): ");
@@ -72,16 +73,14 @@ void initServer() {
 	//Init Winsock
 	struct WSAData WS;
 	if (FAILED(WSAStartup(0x202, (WSADATA *)&WS))) {
-		//Error
-		printf("Client can NOT initialize WSAStartup, error: %d\n", WSAGetLastError());
+		printf("Client can NOT initialize WSAStartup, error: %d\n", WSAGetLastError());	//Error
 		exit(-3);
 	}
 	
 	//Create tcp socket
 	SOCKET sockTCP;
 	if ((sockTCP = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) == INVALID_SOCKET) {
-		//Error
-		printf("Client can NOT create socket, error: %d\n", WSAGetLastError());
+		printf("Client can NOT create socket, error: %d\n", WSAGetLastError());	//Error
 		WSACleanup();
 		exit(-4);
 	}
@@ -94,8 +93,7 @@ void initServer() {
     local_addr.sin_addr.s_addr = INADDR_ANY; 			//Any connection to server
 	
 	//Bind to connect
-	if (bind(sockTCP,(struct sockaddr *) &local_addr,sizeof(local_addr))) {
-		//Error
+	if (bind(sockTCP,(struct sockaddr *) &local_addr,sizeof(local_addr))) {	//Error
 		printf("Error bind %d\n",WSAGetLastError());
 		closesocket(sockTCP);  							//Close socket
 		WSACleanup();
@@ -103,22 +101,29 @@ void initServer() {
     }
 	//Init queue to listen from clients
 	if (listen(sockTCP, queueLength)) {
-		//Error
-		printf("Error listen %d\n",WSAGetLastError());
+		printf("Error listen %d\n",WSAGetLastError());	//Error
 		closesocket(sockTCP);
 		WSACleanup();
 		exit(-6);
     }
+	
+	//Get client's socket
+	SOCKET clientSock;
+	struct sockaddr_in clientAddr;
+	int clientAddrSize = sizeof(clientAddr);
+	
+	clientSock = accept(sockTCP, (struct sockaddr *) &clientAddr, &clientAddrSize);
+	return clientSock;
 }
 //---------------------------------------------------------------------------
-void initConnection(char *argv[]){
+SOCKET initConnection(char *argv[]){
 	if (atoi(argv[1]) == 0) {
 		//Client code
-		initClient();
+		return initClient();
 	}
 	else if (atoi(argv[1]) == 1) {
 		//Server code
-		initServer();
+		return initServer();
 	}
 	else {
 		//WTF code
@@ -127,13 +132,7 @@ void initConnection(char *argv[]){
 	}
 }
 //---------------------------------------------------------------------------
-void drawBattleField(
-					enum battleField playerBattleField[][FIELDSIDE], 
-					enum battleField enemyBattleField[][FIELDSIDE], 
-					unsigned int playerScore, 
-					unsigned int enemyScore, 
-					enum turn playerTurn, 
-					char *move){
+void drawBattleField(enum battleField playerBattleField[][FIELDSIDE], enum battleField enemyBattleField[][FIELDSIDE], unsigned int playerScore, unsigned int enemyScore, enum turn playerTurn, char *move){
 	system("cls");
 	printf("   0|1|2|3|4|5|6|7|8|9|   0|1|2|3|4|5|6|7|8|9|\n");
 	for (int i = 0; i < FIELDSIDE; i++){
@@ -148,8 +147,8 @@ void drawBattleField(
 				printf(" %c|", i + 65);
 			}
 			else if (j > FIELDSIDE)	{
-				if (enemyBattleField[i][j - FIELDSIDE] == EMPTY)		{ printf(" |");}
-				else if (enemyBattleField[i][j - FIELDSIDE] == MISS)	{ printf("*|");}
+				if (enemyBattleField[i][j - FIELDSIDE - 1] == EMPTY)		{ printf(" |");}
+				else if (enemyBattleField[i][j - FIELDSIDE - 1] == MISS)	{ printf("*|");}
 				else 													{ printf("X|");}
 			}
 		}
@@ -175,9 +174,129 @@ enum turn changeTurn(enum turn playerTurn){
 	return temp;
 }
 //---------------------------------------------------------------------------
+/* void sendMove(char *buffSend, SOCKET sockTCP) {
+	send(sockTCP, &buffSend[0], strlen(&buffSend[0]), 0);
+} */
+//---------------------------------------------------------------------------
+struct axes verifyMove(char *move){
+	struct axes result;
+	result.x = -1;
+	result.y = -1;
+	if (move[0] >= 'A' && move[0] < 'K')
+		result.x = move[0] - 'A';
+	else if (move[0] >= 'a' && move[0] < 'k')
+		result.x = move[0] - 'a';
+	else
+		return result;	//Error
+	
+	if (move[1] >= '0' && move[1] < ':')
+		result.y = move[1] - '0';
+	else
+		return result;	//Error
+	return result;
+}
+//---------------------------------------------------------------------------
+int surrendered (char *move, int *endGame) {
+	if(strncmp(move, "SURRENDER", strlen("SURRENDER")) == 0) {	
+		(*endGame)++;
+		return 1;
+	}
+	else 
+		return 0;
+}
+//---------------------------------------------------------------------------
+enum moveResult recvMove(SOCKET sockTCP, enum battleField playerBattleField[][FIELDSIDE], int *endGame) {
+	char recvBuff[MOVESIZE];
+	enum moveResult result = WRONG_MOVE;
+	struct axes axesField;
+	recv(sockTCP, &recvBuff[0], sizeof(recvBuff) - 1, 0);
+	
+	if (surrendered (recvBuff, endGame)) {
+		result = SURRENDER;
+		return result;
+	}
+	
+	//verivy recv movement
+	axesField = verifyMove(recvBuff);
+	
+	if(axesField.x == -1 || axesField.y == -1)
+		return result;	//Error
+	
+	if (playerBattleField[axesField.x][axesField.y] == EMPTY) {
+		playerBattleField[axesField.x][axesField.y] = MISS;
+		result = MISS_MOVE;
+	}
+	else if (playerBattleField[axesField.x][axesField.y] == SHIP) {
+		playerBattleField[axesField.x][axesField.y] = HIT;
+		result = HIT_MOVE;	//Check is KILL_MOVE?
+	}
+	
+	return result;
+}
+//---------------------------------------------------------------------------
+enum moveResult recvResult(SOCKET sockTCP) {
+	char recvBuff[MOVESIZE];
+	enum moveResult result = WRONG_MOVE;
+	recv(sockTCP, &recvBuff[0], sizeof(recvBuff) - 1, 0);
+	if (strncmp(recvBuff, "WRONG_MOVE", strlen("WRONG_MOVE")) == 0)
+		result = WRONG_MOVE;
+	else if (strncmp(recvBuff, "MISS_MOVE", strlen("MISS_MOVE")) == 0)
+		result = MISS_MOVE;
+	else if (strncmp(recvBuff, "HIT_MOVE", strlen("HIT_MOVE")) == 0)
+		result = HIT_MOVE;
+	else if (strncmp(recvBuff, "KILL_MOVE", strlen("KILL_MOVE")) == 0)
+		result = KILL_MOVE;
+	else if (strncmp(recvBuff, "SURRENDER", strlen("SURRENDER")) == 0)
+		result = SURRENDER;
+	return result;
+}
+//---------------------------------------------------------------------------
+enum moveResult makeMove(char *move, int* endGame, enum battleField enemyBattleField[][FIELDSIDE], SOCKET sockTCP){
+	enum moveResult result = WRONG_MOVE;
+	enum battleField field;
+	struct axes axesField;
+	//if player surrender
+	if (surrendered (move, endGame)){
+		result = SURRENDER;
+		return result;
+	}
+	
+	//Verify movement
+	axesField = verifyMove(move);
+	
+	if (axesField.x == -1 || axesField.y == -1)
+		return result;
+	
+	// Move verified, make it
+	if (enemyBattleField[axesField.x][axesField.y] == EMPTY) {
+		send(sockTCP, &move[0], strlen(&move[0]), 0);	//sendMove(move, sockTCP);
+		result = recvResult(sockTCP);
+		switch (result)
+		{
+			case MISS_MOVE:
+				enemyBattleField[axesField.x][axesField.y] = MISS;
+				break;
+			case HIT_MOVE:
+				enemyBattleField[axesField.x][axesField.y] = HIT;
+				break;
+			case KILL_MOVE:
+				enemyBattleField[axesField.x][axesField.y] = HIT;
+				//make MISS around
+				break;
+			/* case SURRENDER :
+				surrendered (move, &endGame)
+				break; */
+			case WRONG_MOVE:
+			default:
+				break;
+		}
+	}
+	return result;
+}
+//---------------------------------------------------------------------------
 int main (int argc, char *argv[]) {	//Server: 1; Client: 0
 	checkArgs(argc);
-	initConnection(argv);
+	SOCKET sockTCP = initConnection(argv);
 	enum battleField playerBattleField[FIELDSIDE][FIELDSIDE], enemyBattleField[FIELDSIDE][FIELDSIDE];
 	for(int i = 0; i < FIELDSIDE; i++)	{		//Init battlefields with EMPTY
 		for(int j = 0; j < FIELDSIDE; j++)	{
@@ -186,13 +305,47 @@ int main (int argc, char *argv[]) {	//Server: 1; Client: 0
 		}
 	}
 	enum turn playerTurn;
-	if (atoi(argv[1]) == 1)	playerTurn = PLAYER;
-	else				playerTurn = ENEMY;
+	if (atoi(argv[1]) == 1)	
+		playerTurn = PLAYER;
+	else
+		playerTurn = ENEMY;
 	int endGame = 0;
 	unsigned int playerScore = 0, enemyScore = 0;
 	char move[MOVESIZE];
+	enum moveResult result;
 	while(!endGame) {
-		drawBattleField(playerBattleField, enemyBattleField, playerScore, enemyScore, playerTurn, move);
+		if (playerTurn == PLAYER) {
+			do {
+				drawBattleField(playerBattleField, enemyBattleField, playerScore, enemyScore, playerTurn, move);
+				result = makeMove(move, &endGame, enemyBattleField, sockTCP);
+			} while (result != SURRENDER && result != MISS_MOVE);
+		}
+		else {
+			do {
+				drawBattleField(playerBattleField, enemyBattleField, playerScore, enemyScore, playerTurn, move);
+				result = recvMove(sockTCP, playerBattleField, &endGame);
+				switch(result)
+				{
+					case WRONG_MOVE:
+						send(sockTCP, "WRONG_MOVE", strlen("WRONG_MOVE"), 0);
+						break;
+					case MISS_MOVE:
+						send(sockTCP, "MISS_MOVE", strlen("MISS_MOVE"), 0);
+						break;
+					case HIT_MOVE:
+						send(sockTCP, "HIT_MOVE", strlen("HIT_MOVE"), 0);
+						break;
+					case KILL_MOVE:
+						send(sockTCP, "KILL_MOVE", strlen("KILL_MOVE"), 0);
+						break;
+					case SURRENDER:
+						send(sockTCP, "SURRENDER", strlen("SURRENDER"), 0);
+					break;
+					default:
+						break;
+				}
+			} while (result !=SURRENDER && result != MISS_MOVE);
+		}
 		playerTurn = changeTurn(playerTurn);
 	}
 	return 0;
