@@ -21,7 +21,7 @@
 enum battleField {EMPTY, MISS, HIT, SHIP};
 enum turn {PLAYER, ENEMY};
 enum moveResult {WRONG_MOVE, MISS_MOVE, HIT_MOVE, KILL_MOVE, SURRENDER};
-struct axes {int x; int y;} axesField;
+struct coord {int x; int y;} axesField;
 //---------------------------------------------------------------------------
 void checkArgs(int argc) {	//Num of args
 	if (argc < 2) {
@@ -189,8 +189,8 @@ enum turn changeTurn(enum turn playerTurn){
 	return temp;
 }
 //---------------------------------------------------------------------------
-struct axes verifyMove(char *move){
-	struct axes result;
+struct coord verifyMove(char *move){
+	struct coord result;
 	result.x = -1;
 	result.y = -1;
 	if (move[0] >= 'A' && move[0] < 'K')
@@ -219,7 +219,7 @@ int surrendered (char *move, int *endGame) {
 enum moveResult recvMove(SOCKET sockTCP, enum battleField playerBattleField[][FIELDSIDE], int *endGame) {
 	char recvBuff[MOVESIZE];
 	enum moveResult result = WRONG_MOVE;
-	struct axes axesField;
+	struct coord axesField;
 	recv(sockTCP, &recvBuff[0], sizeof(recvBuff) - 1, 0);
 	
 	if (surrendered (recvBuff, endGame)) {
@@ -265,7 +265,7 @@ enum moveResult recvResult(SOCKET sockTCP) {
 enum moveResult makeMove(char *move, int* endGame, enum battleField enemyBattleField[][FIELDSIDE], SOCKET sockTCP){
 	enum moveResult result = WRONG_MOVE;
 	enum battleField field;
-	struct axes axesField;
+	struct coord axesField;
 	//if player surrender
 	if (surrendered (move, endGame)){
 		result = SURRENDER;
@@ -305,7 +305,7 @@ enum moveResult makeMove(char *move, int* endGame, enum battleField enemyBattleF
 	return result;
 }
 //---------------------------------------------------------------------------
-void moveUp(enum battleField playerBattleField[][FIELDSIDE], struct axes shipPositions[6][4], const int shipType, const int shipCount) {
+void moveUp(enum battleField playerBattleField[][FIELDSIDE], struct coord shipPositions[6][4], const int shipType, const int shipCount) {
 	int collision = 0;
 	for (int i = 0; i <= shipType; i++) {
 		if (shipPositions[(shipType + 1) * shipCount + i][shipType].x == 0)
@@ -318,7 +318,7 @@ void moveUp(enum battleField playerBattleField[][FIELDSIDE], struct axes shipPos
 	
 }
 //---------------------------------------------------------------------------
-void moveLeft(enum battleField playerBattleField[][FIELDSIDE], struct axes shipPositions[6][4], const int shipType, const int shipCount) {
+void moveLeft(enum battleField playerBattleField[][FIELDSIDE], struct coord shipPositions[6][4], const int shipType, const int shipCount) {
 	int collision = 0;
 	for (int i = 0; i <= shipType; i++) {
 		if (shipPositions[(shipType + 1) * shipCount + i][shipType].y == 0)
@@ -331,7 +331,7 @@ void moveLeft(enum battleField playerBattleField[][FIELDSIDE], struct axes shipP
 	
 }
 //---------------------------------------------------------------------------
-void moveDown(enum battleField playerBattleField[][FIELDSIDE], struct axes shipPositions[6][4], const int shipType, const int shipCount) {
+void moveDown(enum battleField playerBattleField[][FIELDSIDE], struct coord shipPositions[6][4], const int shipType, const int shipCount) {
 	int collision = 0;
 	for (int i = 0; i <= shipType; i++) {
 		if (shipPositions[(shipType + 1) * shipCount + i][shipType].x == 9)
@@ -343,7 +343,7 @@ void moveDown(enum battleField playerBattleField[][FIELDSIDE], struct axes shipP
 	}
 }
 //---------------------------------------------------------------------------
-void moveRight(enum battleField playerBattleField[][FIELDSIDE], struct axes shipPositions[6][4], const int shipType, const int shipCount) {
+void moveRight(enum battleField playerBattleField[][FIELDSIDE], struct coord shipPositions[6][4], const int shipType, const int shipCount) {
 	int collision = 0;
 	for (int i = 0; i <= shipType; i++) {
 		if (shipPositions[(shipType + 1) * shipCount + i][shipType].y == 9)
@@ -356,7 +356,7 @@ void moveRight(enum battleField playerBattleField[][FIELDSIDE], struct axes ship
 	
 }
 //---------------------------------------------------------------------------
-void rotateShip(enum battleField playerBattleField[][FIELDSIDE], struct axes shipPositions[6][4], const int shipType, const int shipCount) {
+void rotateShip(enum battleField playerBattleField[][FIELDSIDE], struct coord shipPositions[6][4], const int shipType, const int shipCount) {
 	if (shipType > 0) {
 		if (shipPositions[(shipType + 1) * shipCount][shipType].x == shipPositions[(shipType + 1) * shipCount + 1][shipType].x) {
 			if (shipPositions[(shipType + 1) * shipCount][shipType].y > shipPositions[(shipType + 1) * shipCount + 1][shipType].y) {
@@ -397,7 +397,7 @@ void rotateShip(enum battleField playerBattleField[][FIELDSIDE], struct axes shi
 	}
 }
 //---------------------------------------------------------------------------
-void writeShipPositions(enum battleField playerBattleField[][FIELDSIDE], struct axes shipPositions[6][4]) {
+void writeShipPositions(enum battleField playerBattleField[][FIELDSIDE], struct coord shipPositions[6][4]) {
 	for (int i = 0; i < FIELDSIDE; i++) {
 		for (int j = 0; j < FIELDSIDE; j++) {
 			if (playerBattleField[i][j] == SHIP)
@@ -412,9 +412,39 @@ void writeShipPositions(enum battleField playerBattleField[][FIELDSIDE], struct 
 	}
 }
 //---------------------------------------------------------------------------
+int anyCollision(struct coord shipPositions[6][4], const int currentShipType, const int currentShipCount) {
+	int result = 0;
+	const int currentI = (currentShipType + 1) * currentShipCount;
+	const int currentJ = currentShipType;
+	struct coord positonToSearch;
+	for (int j = 0; j < 4; j++) {
+		for (int i = 0; i < 6; i++) {
+			if (shipPositions[i][j].x == -1 && shipPositions[i][j].y == -1)
+				continue;
+			if (!(j == currentJ && i == currentI)) {
+				for (int k = 0; k <= currentShipType; k++) {
+					for (int x = -1; x <= 1; x++) {
+						for (int y = -1; y <= 1; y++) {
+							positonToSearch.x = shipPositions[currentI + k][currentJ].x + x;
+							positonToSearch.y = shipPositions[currentI + k][currentJ].y + y;
+							if (positonToSearch.x == shipPositions[i][j].x && positonToSearch.y == shipPositions[i][j].y) {
+								result++;
+							}
+						}
+					}
+				}
+			}
+			else {
+				return result;
+			}
+		}
+	}
+	return result;
+}
+//---------------------------------------------------------------------------
 void setBattleField(enum battleField playerBattleField[][FIELDSIDE]){
 	char getLetter;
-	struct axes shipPositions[6][4];
+	struct coord shipPositions[6][4];
 	for (int i = 0; i < 6; i++) {
 		for (int j = 0; j < 4; j++) {
 			shipPositions[i][j].x = -1;
@@ -454,9 +484,10 @@ void setBattleField(enum battleField playerBattleField[][FIELDSIDE]){
 					rotateShip(playerBattleField, shipPositions, shipType, shipCount);
 					break;
 				case 'e':
-					//check collisions
-					shipCount++;
-					isNewShip++;
+					if (anyCollision(shipPositions, shipType, shipCount) == 0) {
+						shipCount++;
+						isNewShip++;
+					}
 					break;
 				default:
 					break;
