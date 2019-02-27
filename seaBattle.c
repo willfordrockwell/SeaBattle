@@ -18,9 +18,13 @@
 
 #define TOTALSHIPTYPES 4
 
+#define FOREGROUND_WHITE FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE
+#define FOREGROUND_YELLOW FOREGROUND_RED | FOREGROUND_GREEN
+
 enum battleField {EMPTY, MISS, HIT, SHIP};
 enum turn {PLAYER, ENEMY};
 enum moveResult {WRONG_MOVE, MISS_MOVE, HIT_MOVE, KILL_MOVE, SURRENDER};
+enum vector {UP, RIGHT, DOWN, LEFT};
 struct coord {int x; int y;} axesField;
 //---------------------------------------------------------------------------
 void checkArgs(int argc) {	//Num of args
@@ -136,6 +140,7 @@ SOCKET initConnection(char *argv[]){
 }
 //---------------------------------------------------------------------------
 void drawBattleField(enum battleField playerBattleField[][FIELDSIDE], enum battleField enemyBattleField[][FIELDSIDE], int isSet, unsigned int playerScore, unsigned int enemyScore, enum turn playerTurn, char *move){
+	HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
 	system("cls");
 	printf("   0|1|2|3|4|5|6|7|8|9|");
 	if (isSet == 0)
@@ -149,17 +154,17 @@ void drawBattleField(enum battleField playerBattleField[][FIELDSIDE], enum battl
 		for (int j = 0; j < 2 * FIELDSIDE + 1; j++){
 			if (j < FIELDSIDE)
 				if (playerBattleField[i][j] == EMPTY)		{ printf(" |");}
-				else if (playerBattleField[i][j] == MISS)	{ printf("*|");}
-				else if (playerBattleField[i][j] == HIT)	{ printf("X|");}
-				else 										{ printf("#|");}
+				else if (playerBattleField[i][j] == MISS)	{ SetConsoleTextAttribute(hConsole, FOREGROUND_YELLOW); printf("*"); SetConsoleTextAttribute(hConsole, FOREGROUND_WHITE); printf("|");}
+				else if (playerBattleField[i][j] == HIT)	{ SetConsoleTextAttribute(hConsole, FOREGROUND_RED); printf("X");  SetConsoleTextAttribute(hConsole, FOREGROUND_WHITE); printf("|");}
+				else 										{ SetConsoleTextAttribute(hConsole, FOREGROUND_GREEN); printf("#");  SetConsoleTextAttribute(hConsole, FOREGROUND_WHITE); printf("|");}
 			else if (j == FIELDSIDE && isSet == 0) {
 				printf(" %c|", i + 65);
 			}
 			else if (j > FIELDSIDE && isSet == 0)	{
 				if (enemyBattleField[i][j - FIELDSIDE - 1] == EMPTY)		{ printf(" |");}
-				else if (enemyBattleField[i][j - FIELDSIDE - 1] == MISS)	{ printf("*|");}
-				else if (enemyBattleField[i][j - FIELDSIDE - 1] == HIT)		{ printf("X|");}
-				else 														{ printf("#|");}
+				else if (enemyBattleField[i][j - FIELDSIDE - 1] == MISS)	{ SetConsoleTextAttribute(hConsole, FOREGROUND_YELLOW); printf("*"); SetConsoleTextAttribute(hConsole, FOREGROUND_WHITE); printf("|");}
+				else if (enemyBattleField[i][j - FIELDSIDE - 1] == HIT)		{ SetConsoleTextAttribute(hConsole, FOREGROUND_RED); printf("X");  SetConsoleTextAttribute(hConsole, FOREGROUND_WHITE); printf("|");}
+				else 														{ SetConsoleTextAttribute(hConsole, FOREGROUND_GREEN); printf("#");  SetConsoleTextAttribute(hConsole, FOREGROUND_WHITE); printf("|");}
 			}
 		}
 		printf("\n");
@@ -167,13 +172,15 @@ void drawBattleField(enum battleField playerBattleField[][FIELDSIDE], enum battl
 	printf("  ---------------------");
 	if (isSet == 0){
 		printf("  ---------------------\nYour score: %d\nEnemy score: %d\n", playerScore, enemyScore);
-		if (playerTurn == PLAYER) 	{
-			printf("Your turn\nEnter position for FIRE like 'A4' or \n'SURRENDER' to SURRENDER:");
-			scanf("%s", move);
-		}
-		else {
-			printf("Wait for your enemy to FIRE\n");
-			move = "\n";
+		if (playerScore != 20 && enemyScore != 20) {
+			if (playerTurn == PLAYER) 	{
+				printf("Your turn\nEnter position for FIRE like 'A4' or \n'SURRENDER' to SURRENDER:");
+				scanf("%s", move);
+			}
+			else {
+				printf("Wait for your enemy to FIRE\n");
+				move = "\n";
+			}
 		}
 	}
 	else {
@@ -313,6 +320,68 @@ void fillMissMovesToPlayer(struct coord shipPositions[6][4], struct coord lastMo
 			}
 		}
 	}
+}
+//---------------------------------------------------------------------------
+enum vector changeVector (enum vector input) {
+	enum vector result;
+	switch (input) {
+		case UP:
+			result = RIGHT;
+			break;
+		case RIGHT:
+			result = DOWN;
+			break;
+		case DOWN:
+			result = LEFT;
+			break;
+		case LEFT:
+			result = UP;
+			break;
+	}
+	return result;
+}
+//---------------------------------------------------------------------------
+void fillMissMovesToEnemy(struct coord lastMove, enum battleField battleField[][FIELDSIDE]) {
+	enum vector vector = UP;
+	int currentX = lastMove.x, currentY = lastMove.y;
+	do {
+		for (int i = 0; i < TOTALSHIPTYPES; i++) {
+			currentX = lastMove.x; 
+			currentY = lastMove.y;
+			if (vector == UP)
+				currentY -= i;
+			else if (vector == RIGHT)
+				currentX += i;
+			else if (vector == DOWN)
+				currentY += i;
+			else if (vector == LEFT)
+				currentX -= i;
+			if (currentY < 0 && currentY > 9 && currentX < 0 && currentX > 9) {
+				i = TOTALSHIPTYPES;
+				break;
+			}
+			if (battleField[currentX][currentY] != HIT) {
+				i = TOTALSHIPTYPES;
+				break;
+			}
+			for (int x = -1; x <= 1; x++) {
+				currentX += x;
+				if (currentX <= 9 && currentX >= 0) {
+					for (int y = -1; y <= 1; y++) {
+						currentY += y;
+						if (currentY <= 9 && currentY >=0) {
+							if (battleField[currentX][currentY] == EMPTY) {
+								battleField[currentX][currentY] = MISS;
+							}
+						}
+						currentY -= y;
+					}
+				}
+				currentX -= x;
+			}
+		}
+		vector = changeVector(vector);
+	} while (vector != UP);
 }
 //---------------------------------------------------------------------------
 enum moveResult makeMove(char *move, enum battleField enemyBattleField[][FIELDSIDE], struct coord shipPositions[6][4], SOCKET sockTCP){
@@ -576,7 +645,7 @@ int main (int argc, char *argv[]) {	//Server: 1; Client: 0
 				if (result == HIT_MOVE)
 					playerScore++;
 				if (result == KILL_MOVE) {
-					//fillMissMovesToEnemy(shipPositions, verifyMove(move), enemyBattleField);
+					fillMissMovesToEnemy(verifyMove(move), enemyBattleField);
 					playerScore++;
 				}
 				if (result == SURRENDER) {
@@ -613,7 +682,7 @@ int main (int argc, char *argv[]) {	//Server: 1; Client: 0
 						send(sockTCP, "SURRENDER", strlen("SURRENDER"), 0);
 						isSurrender++;
 						endGame++;
-					break;
+						break;
 					default:
 						break;
 				}
@@ -621,6 +690,7 @@ int main (int argc, char *argv[]) {	//Server: 1; Client: 0
 					endGame++;
 			} while ((result !=SURRENDER && result != MISS_MOVE) && endGame == 0);
 		}
+		drawBattleField(playerBattleField, enemyBattleField, 0, playerScore, enemyScore, playerTurn, 0);
 		if (isSurrender == 0) {
 			playerTurn = changeTurn(playerTurn);
 		}
@@ -628,6 +698,6 @@ int main (int argc, char *argv[]) {	//Server: 1; Client: 0
 	if (playerTurn == PLAYER)
 		printf("\nYou lose\n");
 	else
-		printf("You Win\n");
+		printf("\nYou Win\n");
 	return 0;
 }
