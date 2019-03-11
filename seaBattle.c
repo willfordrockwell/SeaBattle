@@ -21,20 +21,53 @@
 #define FOREGROUND_WHITE FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE
 #define FOREGROUND_YELLOW FOREGROUND_RED | FOREGROUND_GREEN
 
-enum battleField {EMPTY, MISS, HIT, SHIP};
-enum turn {PLAYER, ENEMY};
-enum moveResult {WRONG_MOVE, MISS_MOVE, HIT_MOVE, KILL_MOVE, SURRENDER};
-enum vector {UP, RIGHT, DOWN, LEFT};
-struct coord {int x; int y;} axesField;
+enum battleField 
+{
+	EMPTY, 
+	MISS, 
+	HIT, 
+	SHIP
+};
+
+enum turn 
+{
+	PLAYER, 
+	ENEMY
+};
+
+enum moveResult 
+{
+	WRONG_MOVE, 
+	MISS_MOVE, 
+	HIT_MOVE, 
+	KILL_MOVE, 
+	SURRENDER
+};
+
+enum vector 
+{
+	UP, 
+	RIGHT, 
+	DOWN, 
+	LEFT
+};
+
+struct coord 
+{
+	int x; 
+	int y;
+} axesField;
 //---------------------------------------------------------------------------
-void checkArgs(int argc) {	//Num of args
+void checkArgs(int argc) 
+{
 	if (argc < 2) {
 		printf("Enter argument: 0 for client (Second player), 1 for server (First player)");
 		exit(-1);
 	}
 }
 //---------------------------------------------------------------------------
-SOCKET initClient() {
+SOCKET initClient() 
+{
 	char serverIP[IPLENGTH], serverPort[PORTLENGTH];
 	printf("Enter server's IP (example: 127.0.0.1): ");
 	scanf("%s", &serverIP);
@@ -68,10 +101,12 @@ SOCKET initClient() {
         printf("Connect error %d\n", WSAGetLastError());	//Error
         exit(-5);
     }
+	
 	return sockTCP;
 }
 //---------------------------------------------------------------------------
-SOCKET initServer() {
+SOCKET initServer() 
+{
 	char serverPort[PORTLENGTH];
 	const int queueLength = 1;
 	printf("Enter server's port (example: 12345): ");
@@ -120,115 +155,163 @@ SOCKET initServer() {
 	int clientAddrSize = sizeof(clientAddr);
 	
 	clientSock = accept(sockTCP, (struct sockaddr *) &clientAddr, &clientAddrSize);
+	
 	return clientSock;
 }
 //---------------------------------------------------------------------------
-SOCKET initConnection(char *argv[]){
+SOCKET initConnection(char *argv[])
+{
 	if (atoi(argv[1]) == 0) {
 		//Client code
 		return initClient();
-	}
-	else if (atoi(argv[1]) == 1) {
+	} else if (atoi(argv[1]) == 1) {
 		//Server code
 		return initServer();
-	}
-	else {
+	} else {
 		//WTF code
 		printf("Enter argument: 0 for client (Second player), 1 for server (First player)");
 		exit(-2);
 	}
 }
 //---------------------------------------------------------------------------
-void drawBattleField(enum battleField playerBattleField[][FIELDSIDE], enum battleField enemyBattleField[][FIELDSIDE], int isSet, unsigned int playerScore, unsigned int enemyScore, enum turn playerTurn, char *move){
+void drawBattleField	
+(	enum battleField playerBattleField[][FIELDSIDE], 
+	enum battleField enemyBattleField[][FIELDSIDE], 
+	int isSet, 
+	unsigned int playerScore, 
+	unsigned int enemyScore, 
+	enum turn playerTurn, 
+	char *move
+)
+{
 	HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
 	system("cls");
 	printf("   0|1|2|3|4|5|6|7|8|9|");
 	if (isSet == 0)
 		printf("   0|1|2|3|4|5|6|7|8|9|");
 	printf("\n");
-	for (int i = 0; i < FIELDSIDE; i++){
+	for (int i = 0; i < FIELDSIDE; i++) {
 		printf("  ---------------------");
 		if (isSet == 0) 
 			printf("  ---------------------");
 		printf("\n%c |", i + 65);
-		for (int j = 0; j < 2 * FIELDSIDE + 1; j++){
-			if (j < FIELDSIDE)
-				if (playerBattleField[i][j] == EMPTY)		{ printf(" |");}
-				else if (playerBattleField[i][j] == MISS)	{ SetConsoleTextAttribute(hConsole, FOREGROUND_YELLOW); printf("*"); SetConsoleTextAttribute(hConsole, FOREGROUND_WHITE); printf("|");}
-				else if (playerBattleField[i][j] == HIT)	{ SetConsoleTextAttribute(hConsole, FOREGROUND_RED); printf("X");  SetConsoleTextAttribute(hConsole, FOREGROUND_WHITE); printf("|");}
-				else 										{ SetConsoleTextAttribute(hConsole, FOREGROUND_GREEN); printf("#");  SetConsoleTextAttribute(hConsole, FOREGROUND_WHITE); printf("|");}
-			else if (j == FIELDSIDE && isSet == 0) {
+		for (int j = 0; j < 2 * FIELDSIDE + 1; j++) {
+			if (j < FIELDSIDE) {
+				if (playerBattleField[i][j] == EMPTY) { 
+					printf(" |");
+				} else if (playerBattleField[i][j] == MISS) { 
+					SetConsoleTextAttribute(hConsole, FOREGROUND_YELLOW); 
+					printf("*"); 
+					SetConsoleTextAttribute(hConsole, FOREGROUND_WHITE); 
+					printf("|");
+				} else if (playerBattleField[i][j] == HIT) { 
+					SetConsoleTextAttribute(hConsole, FOREGROUND_RED); 
+					printf("X");  
+					SetConsoleTextAttribute(hConsole, FOREGROUND_WHITE); 
+					printf("|");
+				} else { 
+					SetConsoleTextAttribute(hConsole, FOREGROUND_GREEN); 
+					printf("#");  
+					SetConsoleTextAttribute(hConsole, FOREGROUND_WHITE); 
+					printf("|");
+				}
+			} else if (j == FIELDSIDE && isSet == 0) {
 				printf(" %c|", i + 65);
 			}
-			else if (j > FIELDSIDE && isSet == 0)	{
-				if (enemyBattleField[i][j - FIELDSIDE - 1] == EMPTY)		{ printf(" |");}
-				else if (enemyBattleField[i][j - FIELDSIDE - 1] == MISS)	{ SetConsoleTextAttribute(hConsole, FOREGROUND_YELLOW); printf("*"); SetConsoleTextAttribute(hConsole, FOREGROUND_WHITE); printf("|");}
-				else if (enemyBattleField[i][j - FIELDSIDE - 1] == HIT)		{ SetConsoleTextAttribute(hConsole, FOREGROUND_RED); printf("X");  SetConsoleTextAttribute(hConsole, FOREGROUND_WHITE); printf("|");}
-				else 														{ SetConsoleTextAttribute(hConsole, FOREGROUND_GREEN); printf("#");  SetConsoleTextAttribute(hConsole, FOREGROUND_WHITE); printf("|");}
+			else if (j > FIELDSIDE && isSet == 0) {
+				if (enemyBattleField[i][j - FIELDSIDE - 1] == EMPTY) { 
+					printf(" |");
+				} else if (enemyBattleField[i][j - FIELDSIDE - 1] == MISS) { 
+					SetConsoleTextAttribute(hConsole, FOREGROUND_YELLOW); 
+					printf("*"); 
+					SetConsoleTextAttribute(hConsole, FOREGROUND_WHITE); 
+					printf("|");
+				} else if (enemyBattleField[i][j - FIELDSIDE - 1] == HIT) { 
+					SetConsoleTextAttribute(hConsole, FOREGROUND_RED); 
+					printf("X");  SetConsoleTextAttribute(hConsole, FOREGROUND_WHITE); 
+					printf("|");
+				} else { 
+					SetConsoleTextAttribute(hConsole, FOREGROUND_GREEN); 
+					printf("#");  
+					SetConsoleTextAttribute(hConsole, FOREGROUND_WHITE); 
+					printf("|");
+				}
 			}
 		}
 		printf("\n");
 	}
 	printf("  ---------------------");
-	if (isSet == 0){
+	if (isSet == 0) {
 		printf("  ---------------------\nYour score: %d\nEnemy score: %d\n", playerScore, enemyScore);
 		if (playerScore != 20 && enemyScore != 20) {
-			if (playerTurn == PLAYER) 	{
+			if (playerTurn == PLAYER) {
 				printf("Your turn\nEnter position for FIRE like 'A4' or \n'SURRENDER' to SURRENDER:");
 				scanf("%s", move);
-			}
-			else {
+			} else {
 				printf("Wait for your enemy to FIRE\n");
 				move = "\n";
 			}
 		}
-	}
-	else {
+	} else {
 		printf("\nSet your ships:\nWASD to change position\nr to rotate clockwise\ne to set");
 	}
 }
 //---------------------------------------------------------------------------
-enum turn changeTurn(enum turn playerTurn){
+enum turn changeTurn(enum turn playerTurn)
+{
 	enum turn temp;
-	if (playerTurn == ENEMY)
+	if (playerTurn == ENEMY) {
 		temp = PLAYER;
-	else
+	} else {
 		temp = ENEMY;
+	}
 	return temp;
 }
 //---------------------------------------------------------------------------
-struct coord verifyMove(char *move){
+struct coord verifyMove(char *move)
+{
 	struct coord result;
 	result.x = -1;
 	result.y = -1;
-	if (move[0] >= 'A' && move[0] <= 'J')
+	if (move[0] >= 'A' && move[0] <= 'J') {
 		result.x = move[0] - 'A';
-	else if (move[0] >= 'a' && move[0] <= 'j')
+	} else if (move[0] >= 'a' && move[0] <= 'j') {
 		result.x = move[0] - 'a';
-	else
+	} else {
 		return result;	//Error
+	}
 	
-	if (move[1] >= '0' && move[1] <= '9')
+	if (move[1] >= '0' && move[1] <= '9') {
 		result.y = move[1] - '0';
-	else
+	} else {
 		return result;	//Error
+	}
+	
 	return result;
 }
 //---------------------------------------------------------------------------
-int surrendered(char *move) {
-	if(strncmp(move, "SURRENDER", strlen("SURRENDER")) == 0)
+int surrendered(char *move)
+{
+	if(strncmp(move, "SURRENDER", strlen("SURRENDER")) == 0) {
 		return 1;
-	else 
+	} else {
 		return 0;
+	}
 }
 //---------------------------------------------------------------------------
-enum moveResult isKill(struct coord shipPositions[6][4], struct coord lastMove, enum battleField playerBattleField[][FIELDSIDE]) {
+enum moveResult isKill	
+(	struct coord shipPositions[6][4], 
+	struct coord lastMove, 
+	enum battleField playerBattleField[][FIELDSIDE]
+) 
+{
 	enum moveResult result = HIT_MOVE;
 	int currentI = 0, currentJ = 0, hittedShips = 0, stopSearch = 0;
 	for (int i = 0; i < 4 && stopSearch < 1; i++) {
 		for (int j = 0; j < 6 && stopSearch < 1; j++) {
-			if (shipPositions[j][i].x == -1 && shipPositions[j][i].y == -1)
+			if (shipPositions[j][i].x == -1 && shipPositions[j][i].y == -1) {
 				continue;
+			}
 			if (shipPositions[j][i].x == lastMove.x && shipPositions[j][i].y == lastMove.y) {
 				currentI = i;
 				currentJ = j; 
@@ -238,15 +321,24 @@ enum moveResult isKill(struct coord shipPositions[6][4], struct coord lastMove, 
 	}
 	currentJ = currentJ - (currentJ % (currentI + 1));
 	for (int j = 0; j < currentI + 1; j++) {
-		if (playerBattleField[shipPositions[currentJ + j][currentI].x][shipPositions[currentJ + j][currentI].y] == HIT)
+		if (playerBattleField[shipPositions[currentJ + j][currentI].x][shipPositions[currentJ + j][currentI].y] == HIT) {
 			hittedShips++;
+		}
 	}
-	if (hittedShips == currentI + 1)
+	if (hittedShips == currentI + 1) {
 		result = KILL_MOVE;
+	}
+	
 	return result;
 }
 //---------------------------------------------------------------------------
-enum moveResult recvMove(SOCKET sockTCP, enum battleField playerBattleField[][FIELDSIDE], struct coord shipPositions[6][4], char move[MOVESIZE]) {
+enum moveResult recvMove
+(	SOCKET sockTCP, 
+	enum battleField playerBattleField[][FIELDSIDE], 
+	struct coord shipPositions[6][4], 
+	char move[MOVESIZE]
+) 
+{
 	enum moveResult result = WRONG_MOVE;
 	struct coord axesField;
 	recv(sockTCP, &move[0], MOVESIZE, 0);
@@ -259,8 +351,9 @@ enum moveResult recvMove(SOCKET sockTCP, enum battleField playerBattleField[][FI
 	//verify recv movement
 	axesField = verifyMove(move);
 	
-	if(axesField.x == -1 || axesField.y == -1)
+	if(axesField.x == -1 || axesField.y == -1) {
 		return result;	//Error
+	}
 	
 	if (playerBattleField[axesField.x][axesField.y] == EMPTY) {
 		playerBattleField[axesField.x][axesField.y] = MISS;
@@ -274,29 +367,38 @@ enum moveResult recvMove(SOCKET sockTCP, enum battleField playerBattleField[][FI
 	return result;
 }
 //---------------------------------------------------------------------------
-enum moveResult recvResult(SOCKET sockTCP) {
+enum moveResult recvResult(SOCKET sockTCP) 
+{
 	char recvBuff[MOVESIZE];
 	enum moveResult result = WRONG_MOVE;
 	recv(sockTCP, &recvBuff[0], sizeof(recvBuff) - 1, 0);
-	if (strncmp(recvBuff, "WRONG_MOVE", strlen("WRONG_MOVE")) == 0)
+	if (strncmp(recvBuff, "WRONG_MOVE", strlen("WRONG_MOVE")) == 0) {
 		result = WRONG_MOVE;
-	else if (strncmp(recvBuff, "MISS_MOVE", strlen("MISS_MOVE")) == 0)
+	} else if (strncmp(recvBuff, "MISS_MOVE", strlen("MISS_MOVE")) == 0) {
 		result = MISS_MOVE;
-	else if (strncmp(recvBuff, "HIT_MOVE", strlen("HIT_MOVE")) == 0)
+	} else if (strncmp(recvBuff, "HIT_MOVE", strlen("HIT_MOVE")) == 0) {
 		result = HIT_MOVE;
-	else if (strncmp(recvBuff, "KILL_MOVE", strlen("KILL_MOVE")) == 0)
+	} else if (strncmp(recvBuff, "KILL_MOVE", strlen("KILL_MOVE")) == 0) {
 		result = KILL_MOVE;
-	else if (strncmp(recvBuff, "SURRENDER", strlen("SURRENDER")) == 0)
+	} else if (strncmp(recvBuff, "SURRENDER", strlen("SURRENDER")) == 0) {
 		result = SURRENDER;
+	}
+	
 	return result;
 }
 //---------------------------------------------------------------------------
-void fillMissMovesToPlayer(struct coord shipPositions[6][4], struct coord lastMove, enum battleField battleField[][FIELDSIDE]) {
+void fillMissMovesToPlayer	
+(	struct coord shipPositions[6][4], 
+	struct coord lastMove, 
+	enum battleField battleField[][FIELDSIDE]
+) 
+{
 	int currentI = 0, currentJ = 0, currentX = 0, currentY = 0, stopSearch = 0;
 	for (int i = 0; i < 4 && stopSearch < 1; i++) {
 		for (int j = 0; j < 6 && stopSearch < 1; j++) {
-			if (shipPositions[j][i].x == -1 && shipPositions[j][i].y == -1)
+			if (shipPositions[j][i].x == -1 && shipPositions[j][i].y == -1) {
 				continue;
+			}
 			if (shipPositions[j][i].x == lastMove.x && shipPositions[j][i].y == lastMove.y) {
 				currentI = i;
 				currentJ = j;	
@@ -322,40 +424,53 @@ void fillMissMovesToPlayer(struct coord shipPositions[6][4], struct coord lastMo
 	}
 }
 //---------------------------------------------------------------------------
-enum vector changeVector (enum vector input) {
+enum vector changeVector (enum vector input) 
+{
 	enum vector result;
 	switch (input) {
-		case UP:
-			result = RIGHT;
-			break;
-		case RIGHT:
-			result = DOWN;
-			break;
-		case DOWN:
-			result = LEFT;
-			break;
-		case LEFT:
-			result = UP;
-			break;
+	case UP:
+		result = RIGHT;
+		break;
+	case RIGHT:
+		result = DOWN;
+		break;
+	case DOWN:
+		result = LEFT;
+		break;
+	case LEFT:
+		result = UP;
+		break;
 	}
+	
 	return result;
 }
 //---------------------------------------------------------------------------
-void fillMissMovesToEnemy(struct coord lastMove, enum battleField battleField[][FIELDSIDE]) {
+void fillMissMovesToEnemy	
+(	struct coord lastMove, 
+	enum battleField battleField[][FIELDSIDE]
+) 
+{
 	enum vector vector = UP;
 	int currentX = lastMove.x, currentY = lastMove.y;
 	do {
 		for (int i = 0; i < TOTALSHIPTYPES; i++) {
 			currentX = lastMove.x; 
 			currentY = lastMove.y;
-			if (vector == UP)
+			switch(vector) {
+			case UP:
 				currentY -= i;
-			else if (vector == RIGHT)
+				break;
+			case RIGHT:
 				currentX += i;
-			else if (vector == DOWN)
+				break;
+			case DOWN:
 				currentY += i;
-			else if (vector == LEFT)
+				break;
+			case LEFT:
 				currentX -= i;
+				break;
+			}
+			
 			if (currentY < 0 && currentY > 9 && currentX < 0 && currentX > 9) {
 				i = TOTALSHIPTYPES;
 				break;
@@ -384,11 +499,17 @@ void fillMissMovesToEnemy(struct coord lastMove, enum battleField battleField[][
 	} while (vector != UP);
 }
 //---------------------------------------------------------------------------
-enum moveResult makeMove(char *move, enum battleField enemyBattleField[][FIELDSIDE], struct coord shipPositions[6][4], SOCKET sockTCP){
+enum moveResult makeMove	
+(	char *move, 
+	enum battleField enemyBattleField[][FIELDSIDE], 
+	struct coord shipPositions[6][4], 
+	SOCKET sockTCP
+)
+{
 	enum moveResult result = WRONG_MOVE;
 	struct coord axesField;
 	//if player surrender
-	if (surrendered(move) == 1){
+	if (surrendered(move) == 1) {
 		result = SURRENDER;
 		send(sockTCP, &move[0], strlen(move), 0);
 		return result;
@@ -397,86 +518,122 @@ enum moveResult makeMove(char *move, enum battleField enemyBattleField[][FIELDSI
 	//Verify movement
 	axesField = verifyMove(move);
 	
-	if (axesField.x == -1 || axesField.y == -1)
+	if (axesField.x == -1 || axesField.y == -1) {
 		return result;
+	}
 	
 	// Move verified, make it
 	if (enemyBattleField[axesField.x][axesField.y] == EMPTY) {
 		send(sockTCP, &move[0], strlen(move), 0);
 		result = recvResult(sockTCP);
-		switch (result)
-		{
-			case MISS_MOVE:
-				enemyBattleField[axesField.x][axesField.y] = MISS;
-				break;
-			case HIT_MOVE:
-				enemyBattleField[axesField.x][axesField.y] = HIT;
-				break;
-			case KILL_MOVE:
-				enemyBattleField[axesField.x][axesField.y] = HIT;
-				//fillMissMovesToEnemy
-				break;
-			case SURRENDER:
-			case WRONG_MOVE:
-			default:
-				break;
+		switch (result) {
+		case MISS_MOVE:
+			enemyBattleField[axesField.x][axesField.y] = MISS;
+			break;
+		case HIT_MOVE:
+			enemyBattleField[axesField.x][axesField.y] = HIT;
+			break;
+		case KILL_MOVE:
+			enemyBattleField[axesField.x][axesField.y] = HIT;
+			break;
+		case SURRENDER:
+		case WRONG_MOVE:
+		default:
+			break;
 		}
 	}
 	return result;
 }
 //---------------------------------------------------------------------------
-void moveUp(enum battleField playerBattleField[][FIELDSIDE], struct coord shipPositions[6][4], const int shipType, const int shipCount) {
+void moveUp	
+(	enum battleField playerBattleField[][FIELDSIDE], 
+	struct coord shipPositions[6][4], 
+	const int shipType, 
+	const int shipCount
+) 
+{
 	int collision = 0;
 	for (int i = 0; i <= shipType; i++) {
-		if (shipPositions[(shipType + 1) * shipCount + i][shipType].x == 0)
+		if (shipPositions[(shipType + 1) * shipCount + i][shipType].x == 0) {
 			collision++;
+		}
 	}
 	if (!collision) {
-		for (int i = 0; i <= shipType; i++)
+		for (int i = 0; i <= shipType; i++) {
 			shipPositions[(shipType + 1) * shipCount + i][shipType].x--;
+		}
 	}
-	
 }
 //---------------------------------------------------------------------------
-void moveLeft(enum battleField playerBattleField[][FIELDSIDE], struct coord shipPositions[6][4], const int shipType, const int shipCount) {
+void moveLeft	
+(	enum battleField playerBattleField[][FIELDSIDE], 
+	struct coord shipPositions[6][4], 
+	const int shipType, 
+	const int shipCount
+) 
+{
 	int collision = 0;
 	for (int i = 0; i <= shipType; i++) {
-		if (shipPositions[(shipType + 1) * shipCount + i][shipType].y == 0)
+		if (shipPositions[(shipType + 1) * shipCount + i][shipType].y == 0) {
 			collision++;
+		}
 	}
 	if (!collision) {
-		for (int i = 0; i <= shipType; i++)
+		for (int i = 0; i <= shipType; i++) {
 			shipPositions[(shipType + 1) * shipCount + i][shipType].y--;
+		}
 	}
 	
 }
 //---------------------------------------------------------------------------
-void moveDown(enum battleField playerBattleField[][FIELDSIDE], struct coord shipPositions[6][4], const int shipType, const int shipCount) {
+void moveDown	
+(	enum battleField playerBattleField[][FIELDSIDE], 
+	struct coord shipPositions[6][4], 
+	const int shipType, 
+	const int shipCount
+) 
+{
 	int collision = 0;
 	for (int i = 0; i <= shipType; i++) {
-		if (shipPositions[(shipType + 1) * shipCount + i][shipType].x == 9)
+		if (shipPositions[(shipType + 1) * shipCount + i][shipType].x == 9) {
 			collision++;
+		}
 	}
 	if (!collision) {
-		for (int i = 0; i <= shipType; i++)
+		for (int i = 0; i <= shipType; i++) {
 			shipPositions[(shipType + 1) * shipCount + i][shipType].x++;
+		}
 	}
 }
 //---------------------------------------------------------------------------
-void moveRight(enum battleField playerBattleField[][FIELDSIDE], struct coord shipPositions[6][4], const int shipType, const int shipCount) {
+void moveRight	
+(	enum battleField playerBattleField[][FIELDSIDE], 
+	struct coord shipPositions[6][4], 
+	const int shipType, 
+	const int shipCount
+) 
+{
 	int collision = 0;
 	for (int i = 0; i <= shipType; i++) {
-		if (shipPositions[(shipType + 1) * shipCount + i][shipType].y == 9)
+		if (shipPositions[(shipType + 1) * shipCount + i][shipType].y == 9) {
 			collision++;
+		}
 	}
 	if (!collision) {
-		for (int i = 0; i <= shipType; i++)
+		for (int i = 0; i <= shipType; i++) {
 			shipPositions[(shipType + 1) * shipCount + i][shipType].y++;
+		}
 	}
 	
 }
 //---------------------------------------------------------------------------
-void rotateShip(enum battleField playerBattleField[][FIELDSIDE], struct coord shipPositions[6][4], const int shipType, const int shipCount) {
+void rotateShip	
+(	enum battleField playerBattleField[][FIELDSIDE], 
+	struct coord shipPositions[6][4], 
+	const int shipType, 
+	const int shipCount
+) 
+{
 	if (shipType > 0) {
 		if (shipPositions[(shipType + 1) * shipCount][shipType].x == shipPositions[(shipType + 1) * shipCount + 1][shipType].x) {
 			if (shipPositions[(shipType + 1) * shipCount][shipType].y > shipPositions[(shipType + 1) * shipCount + 1][shipType].y) {
@@ -486,8 +643,7 @@ void rotateShip(enum battleField playerBattleField[][FIELDSIDE], struct coord sh
 						shipPositions[(shipType + 1) * shipCount + k][shipType].x += k;
 					}
 				}
-			}
-			else {
+			} else {
 				if (shipPositions[(shipType + 1) * shipCount + shipType][shipType].x - (shipType + 1)< FIELDSIDE) {
 					for (int k = 0; k <= shipType; k++) {
 						shipPositions[(shipType + 1) * shipCount + k][shipType].y = shipPositions[(shipType + 1) * shipCount][shipType].y;
@@ -495,8 +651,7 @@ void rotateShip(enum battleField playerBattleField[][FIELDSIDE], struct coord sh
 					}
 				}
 			}
-		}
-		else {
+		} else {
 			if (shipPositions[(shipType + 1) * shipCount][shipType].x <= shipPositions[(shipType + 1) * shipCount + 1][shipType].x) {
 				if (shipPositions[(shipType + 1) * shipCount + shipType][shipType].y + (shipType + 1) < FIELDSIDE) {
 					for (int k = 0; k <= shipType; k++) {
@@ -504,8 +659,7 @@ void rotateShip(enum battleField playerBattleField[][FIELDSIDE], struct coord sh
 						shipPositions[(shipType + 1) * shipCount + k][shipType].y += k;
 					}
 				}
-			}
-			else {
+			} else {
 				if (shipPositions[(shipType + 1) * shipCount + shipType][shipType].y - (shipType + 1)< FIELDSIDE) {
 					for (int k = 0; k <= shipType; k++) {
 						shipPositions[(shipType + 1) * shipCount + k][shipType].x = shipPositions[(shipType + 1) * shipCount][shipType].x;
@@ -517,30 +671,42 @@ void rotateShip(enum battleField playerBattleField[][FIELDSIDE], struct coord sh
 	}
 }
 //---------------------------------------------------------------------------
-void writeShipPositions(enum battleField playerBattleField[][FIELDSIDE], struct coord shipPositions[6][4]) {
+void writeShipPositions	
+(	enum battleField playerBattleField[][FIELDSIDE], 
+	struct coord shipPositions[6][4]
+) 
+{
 	for (int i = 0; i < FIELDSIDE; i++) {
 		for (int j = 0; j < FIELDSIDE; j++) {
-			if (playerBattleField[i][j] == SHIP)
+			if (playerBattleField[i][j] == SHIP) {
 				playerBattleField[i][j] = EMPTY;
+			}
 		}
 	}
 	for (int i = 0; i < 6; i++) {
 		for (int j = 0; j < 4; j++) {
-			if(shipPositions[i][j].x >= 0 && shipPositions[i][j].y >= 0 && shipPositions[i][j].x < 10 && shipPositions[i][j].y < 10)
+			if(shipPositions[i][j].x >= 0 && shipPositions[i][j].y >= 0 && shipPositions[i][j].x < 10 && shipPositions[i][j].y < 10) {
 				playerBattleField[shipPositions[i][j].x][shipPositions[i][j].y] = SHIP;
+			}
 		}
 	}
 }
 //---------------------------------------------------------------------------
-int anyCollision(struct coord shipPositions[6][4], const int currentShipType, const int currentShipCount) {
+int anyCollision
+(	struct coord shipPositions[6][4], 
+	const int currentShipType, 
+	const int currentShipCount
+) 
+{
 	int result = 0;
 	const int currentI = (currentShipType + 1) * currentShipCount;
 	const int currentJ = currentShipType;
 	struct coord positonToSearch;
 	for (int j = 0; j < 4; j++) {
 		for (int i = 0; i < 6; i++) {
-			if (shipPositions[i][j].x == -1 && shipPositions[i][j].y == -1)
+			if (shipPositions[i][j].x == -1 && shipPositions[i][j].y == -1) {
 				continue;
+			}
 			if (!(j == currentJ && i == currentI)) {
 				for (int k = 0; k <= currentShipType; k++) {
 					for (int x = -1; x <= 1; x++) {
@@ -553,15 +719,18 @@ int anyCollision(struct coord shipPositions[6][4], const int currentShipType, co
 						}
 					}
 				}
-			}
-			else {
+			} else {
 				return result;
 			}
 		}
 	}
 }
 //---------------------------------------------------------------------------
-void setBattleField(enum battleField playerBattleField[][FIELDSIDE], struct coord shipPositions[6][4]){
+void setBattleField	
+(	enum battleField playerBattleField[][FIELDSIDE], 
+	struct coord shipPositions[6][4]
+)
+{
 	char getLetter;
 	int shipCount = 0;
 	int isNewShip = 1;
@@ -578,52 +747,54 @@ void setBattleField(enum battleField playerBattleField[][FIELDSIDE], struct coor
 			drawBattleField(playerBattleField, 0, 1, 0, 0, 0, 0);
 			while(!kbhit());
 			getLetter = getche();
-			switch (getLetter)
-			{
-				case 'w':
-					moveUp(playerBattleField, shipPositions, shipType, shipCount);
-					break;
-				case 'a':
-					moveLeft(playerBattleField, shipPositions, shipType, shipCount);
-					break;
-				case 's':
-					moveDown(playerBattleField, shipPositions, shipType, shipCount);
-					break;
-				case 'd':
-					moveRight(playerBattleField, shipPositions, shipType, shipCount);
-					break;
-				case 'r':
-					rotateShip(playerBattleField, shipPositions, shipType, shipCount);
-					break;
-				case 'e':
-					if (anyCollision(shipPositions, shipType, shipCount) == 0) {
-						shipCount++;
-						isNewShip++;
-					}
-					break;
-				default:
-					break;
+			switch (getLetter) {
+			case 'w':
+				moveUp(playerBattleField, shipPositions, shipType, shipCount);
+				break;
+			case 'a':
+				moveLeft(playerBattleField, shipPositions, shipType, shipCount);
+				break;
+			case 's':
+				moveDown(playerBattleField, shipPositions, shipType, shipCount);
+				break;
+			case 'd':
+				moveRight(playerBattleField, shipPositions, shipType, shipCount);
+				break;
+			case 'r':
+				rotateShip(playerBattleField, shipPositions, shipType, shipCount);
+				break;
+			case 'e':
+				if (anyCollision(shipPositions, shipType, shipCount) == 0) {
+					shipCount++;
+					isNewShip++;
+				}
+				break;
+			default:
+				break;
 			}
 		}
 		shipCount = 0;
 	}
 }
 //---------------------------------------------------------------------------
-int main (int argc, char *argv[]) {	//Server: 1; Client: 0
+int main (int argc, char *argv[]) 
+{	//Server: 1; Client: 0
 	checkArgs(argc);
 	SOCKET sockTCP = initConnection(argv);
-	enum battleField playerBattleField[FIELDSIDE][FIELDSIDE], enemyBattleField[FIELDSIDE][FIELDSIDE];
-	for(int i = 0; i < FIELDSIDE; i++)	{		//Init battlefields with EMPTY
-		for(int j = 0; j < FIELDSIDE; j++)	{
+	enum battleField playerBattleField[FIELDSIDE][FIELDSIDE];
+	enum battleField enemyBattleField[FIELDSIDE][FIELDSIDE];
+	for(int i = 0; i < FIELDSIDE; i++) {		//Init battlefields with EMPTY
+		for(int j = 0; j < FIELDSIDE; j++) {
 			playerBattleField[i][j] = EMPTY;
 			enemyBattleField[i][j] = EMPTY;
 		}
 	}
 	enum turn playerTurn;
-	if (atoi(argv[1]) == 1)	
+	if (atoi(argv[1]) == 1)	{
 		playerTurn = PLAYER;
-	else
+	} else {
 		playerTurn = ENEMY;
+	}
 	int endGame = 0, isSurrender = 0;
 	unsigned int playerScore = 0, enemyScore = 0;
 	char move[MOVESIZE];
@@ -642,52 +813,47 @@ int main (int argc, char *argv[]) {	//Server: 1; Client: 0
 			do {
 				drawBattleField(playerBattleField, enemyBattleField, 0, playerScore, enemyScore, playerTurn, move);
 				result = makeMove(move, enemyBattleField, shipPositions, sockTCP);
-				if (result == HIT_MOVE)
-					playerScore++;
-				if (result == KILL_MOVE) {
+				switch (result) {
+				case KILL_MOVE:
 					fillMissMovesToEnemy(verifyMove(move), enemyBattleField);
+				case HIT_MOVE:
 					playerScore++;
-				}
-				if (result == SURRENDER) {
+					break;
+				case SURRENDER:
 					isSurrender++;
 					endGame++;
+					break;
+				default:
+					break;
 				}
-				if (playerScore == 20 || enemyScore == 20)
+				
+				if (playerScore == 20 || enemyScore == 20) {
 					endGame++;
+				}
 			} while ((result != SURRENDER && result != MISS_MOVE) && endGame == 0);
-		}
-		else {
+		} else {
 			//enemy turn
 			do {
 				drawBattleField(playerBattleField, enemyBattleField, 0, playerScore, enemyScore, playerTurn, move);
 				result = recvMove(sockTCP, playerBattleField, shipPositions, move);
-				switch(result)
-				{
-					case WRONG_MOVE:
-						send(sockTCP, "WRONG_MOVE", strlen("WRONG_MOVE"), 0);
-						break;
-					case MISS_MOVE:
-						send(sockTCP, "MISS_MOVE", strlen("MISS_MOVE"), 0);
-						break;
-					case HIT_MOVE:
-						send(sockTCP, "HIT_MOVE", strlen("HIT_MOVE"), 0);
-						enemyScore++;
-						break;
-					case KILL_MOVE:
-						send(sockTCP, "KILL_MOVE", strlen("KILL_MOVE"), 0);
-						fillMissMovesToPlayer(shipPositions, verifyMove(move), playerBattleField);
-						enemyScore++;
-						break;
-					case SURRENDER:
-						send(sockTCP, "SURRENDER", strlen("SURRENDER"), 0);
-						isSurrender++;
-						endGame++;
-						break;
-					default:
-						break;
-				}
-				if (playerScore == 20 || enemyScore == 20)
+				switch(result) {
+				case KILL_MOVE:
+					fillMissMovesToPlayer(shipPositions, verifyMove(move), playerBattleField);
+				case HIT_MOVE:
+					enemyScore++;
+					break;
+				case SURRENDER:
+					isSurrender++;
 					endGame++;
+					break;
+				default:	//WRONG_MOVE, MISS_MOVE
+					break;
+				}
+				send(sockTCP, result, strlen(result), 0);
+				
+				if (playerScore == 20 || enemyScore == 20) {
+					endGame++;
+				}
 			} while ((result !=SURRENDER && result != MISS_MOVE) && endGame == 0);
 		}
 		drawBattleField(playerBattleField, enemyBattleField, 0, playerScore, enemyScore, playerTurn, 0);
@@ -695,9 +861,11 @@ int main (int argc, char *argv[]) {	//Server: 1; Client: 0
 			playerTurn = changeTurn(playerTurn);
 		}
 	}
-	if (playerTurn == PLAYER)
+	if (playerTurn == PLAYER) {
 		printf("\nYou lose\n");
-	else
+	} else {
 		printf("\nYou Win\n");
+	}
+	
 	return 0;
 }
