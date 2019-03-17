@@ -21,11 +21,11 @@
 #define FOREGROUND_WHITE FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE
 #define FOREGROUND_YELLOW FOREGROUND_RED | FOREGROUND_GREEN
 
-/// Все перечисления лучше объявить через typedef  вынестив  загловочный файл
-// программу лучше разделить на несколько отдельных модулей
-// сетевой
-// отрисовка
-// 
+/// Р’СЃРµ РїРµСЂРµС‡РёСЃР»РµРЅРёСЏ Р»СѓС‡С€Рµ РѕР±СЉСЏРІРёС‚СЊ С‡РµСЂРµР· typedef  РІС‹РЅРµСЃС‚РёРІ  Р·Р°РіР»РѕРІРѕС‡РЅС‹Р№ С„Р°Р№Р»
+// РїСЂРѕРіСЂР°РјРјСѓ Р»СѓС‡С€Рµ СЂР°Р·РґРµР»РёС‚СЊ РЅР° РЅРµСЃРєРѕР»СЊРєРѕ РѕС‚РґРµР»СЊРЅС‹С… РјРѕРґСѓР»РµР№
+// СЃРµС‚РµРІРѕР№
+// РѕС‚СЂРёСЃРѕРІРєР°
+// РёРіСЂРѕРІР°СЏ Р»РѕРіРёРєР°
 enum battleField
 {
 	EMPTY,
@@ -286,7 +286,7 @@ enum turn changeTurn(enum turn playerTurn)
 	// rerurn (playerTurn == ENEMY) ? PLAYER : ENEMY;
 }
 //---------------------------------------------------------------------------
-// название функции не сооотвествует ее работе.
+// РЅР°Р·РІР°РЅРёРµ С„СѓРЅРєС†РёРё РЅРµ СЃРѕРѕРѕС‚РІРµСЃС‚РІСѓРµС‚ РµРµ СЂР°Р±РѕС‚Рµ.
 struct coord verifyMove(char *move)
 {
 	struct coord result;
@@ -312,7 +312,7 @@ struct coord verifyMove(char *move)
 	return result;
 }
 //---------------------------------------------------------------------------
-// лучше назвать isSurrended 
+// Р»СѓС‡С€Рµ РЅР°Р·РІР°С‚СЊ isSurrended 
 int surrendered(char *move)
 {
 	if (strncmp(move, "SURRENDER", strlen("SURRENDER")) == 0) {
@@ -323,7 +323,7 @@ int surrendered(char *move)
 	}
 }
 //---------------------------------------------------------------------------
-// не совсем разобрался что функция делает.
+// РЅРµ СЃРѕРІСЃРµРј СЂР°Р·РѕР±СЂР°Р»СЃСЏ С‡С‚Рѕ С„СѓРЅРєС†РёСЏ РґРµР»Р°РµС‚.
 enum moveResult isKill
 (struct coord shipPositions[6][4],
 	struct coord lastMove,
@@ -332,7 +332,7 @@ enum moveResult isKill
 {
 	enum moveResult result = HIT_MOVE;
 	int currentI = 0, currentJ = 0, hittedShips = 0, stopSearch = 0;
-	///Небольшая оптимизация
+	///РќРµР±РѕР»СЊС€Р°СЏ РѕРїС‚РёРјРёР·Р°С†РёСЏ
 	for (int i = 0; i < 4 && stopSearch < 1; i++) {
 		for (int j = 0; j < 6; j++) {
 			if (shipPositions[j][i].x == -1 && shipPositions[j][i].y == -1) {
@@ -370,7 +370,7 @@ enum moveResult recvMove
 	struct coord axesField;
 	recv(sockTCP, &move[0], MOVESIZE, 0);
 
-	// if (surrendered(move)), сравнение лишнее
+	// if (surrendered(move)), СЃСЂР°РІРЅРµРЅРёРµ Р»РёС€РЅРµРµ
 	if (surrendered(move) == 1) {
 		result = SURRENDER;
 		return result;
@@ -426,7 +426,7 @@ void fillMissMovesToPlayer
 	enum battleField battleField[][FIELDSIDE]
 )
 {
-	// этот алгоритм уже был в isKill - лучше вывести в отдельню функцию
+	// СЌС‚РѕС‚ Р°Р»РіРѕСЂРёС‚Рј СѓР¶Рµ Р±С‹Р» РІ isKill - Р»СѓС‡С€Рµ РІС‹РІРµСЃС‚Рё РІ РѕС‚РґРµР»СЊРЅСЋ С„СѓРЅРєС†РёСЋ
 	int currentI = 0, currentJ = 0, currentX = 0, currentY = 0, stopSearch = 0;
 	for (int i = 0; i < 4 && stopSearch < 1; i++) {
 		for (int j = 0; j < 6 && stopSearch < 1; j++) {
@@ -445,7 +445,7 @@ void fillMissMovesToPlayer
 		for (int x = -1; x <= 1; x++) {
 			currentX = shipPositions[currentJ + j][currentI].x + x;
 			if (currentX <= 9 && currentX >= 0) {
-				// размеры поля жестко захардожены. А если придется поменять. Задать макроопредениями лучше
+				// СЂР°Р·РјРµСЂС‹ РїРѕР»СЏ Р¶РµСЃС‚РєРѕ Р·Р°С…Р°СЂРґРѕР¶РµРЅС‹. Рђ РµСЃР»Рё РїСЂРёРґРµС‚СЃСЏ РїРѕРјРµРЅСЏС‚СЊ. Р—Р°РґР°С‚СЊ РјР°РєСЂРѕРѕРїСЂРµРґРµРЅРёСЏРјРё Р»СѓС‡С€Рµ
 				for (int y = -1; y <= 1; y++) {
 					currentY = shipPositions[currentJ + j][currentI].y + y;
 					if (currentY <= 9 && currentY >= 0) {
@@ -505,7 +505,7 @@ void fillMissMovesToEnemy
 				currentX -= i;
 				break;
 			}
-			// это условие никогда не выполнитсся
+			// СЌС‚Рѕ СѓСЃР»РѕРІРёРµ РЅРёРєРѕРіРґР° РЅРµ РІС‹РїРѕР»РЅРёС‚СЃСЃСЏ
 			if (currentY < 0 && currentY > 9 && currentX < 0 && currentX > 9) {
 				i = TOTALSHIPTYPES;
 				break;
@@ -552,7 +552,7 @@ enum moveResult makeMove
 
 	//Verify movement
 	axesField = verifyMove(move);
-	// после верификации, у идет дополнительная проверка?
+	// РїРѕСЃР»Рµ РІРµСЂРёС„РёРєР°С†РёРё, Сѓ РёРґРµС‚ РґРѕРїРѕР»РЅРёС‚РµР»СЊРЅР°СЏ РїСЂРѕРІРµСЂРєР°?
 	if (axesField.x == -1 || axesField.y == -1) {
 		return result;
 	}
@@ -824,7 +824,7 @@ int main(int argc, char *argv[])
 	SOCKET sockTCP = initConnection(argv);
 	enum battleField playerBattleField[FIELDSIDE][FIELDSIDE];
 	enum battleField enemyBattleField[FIELDSIDE][FIELDSIDE];
-	// вывести в отдельную функцию
+	// РІС‹РІРµСЃС‚Рё РІ РѕС‚РґРµР»СЊРЅСѓСЋ С„СѓРЅРєС†РёСЋ
 	for (int i = 0; i < FIELDSIDE; i++) {		//Init battlefields with EMPTY
 		for (int j = 0; j < FIELDSIDE; j++) {
 			playerBattleField[i][j] = EMPTY;
@@ -842,8 +842,8 @@ int main(int argc, char *argv[])
 	unsigned int playerScore = 0, enemyScore = 0;
 	char move[MOVESIZE];
 	enum moveResult result;
-	// позиции корблей - можно задать как структуру координата + оринтация
-	// сам корбаль струкура - тип(1,2,3,4) , позиция, вектор состояния.
+	// РїРѕР·РёС†РёРё РєРѕСЂР±Р»РµР№ - РјРѕР¶РЅРѕ Р·Р°РґР°С‚СЊ РєР°Рє СЃС‚СЂСѓРєС‚СѓСЂСѓ РєРѕРѕСЂРґРёРЅР°С‚Р° + РѕСЂРёРЅС‚Р°С†РёСЏ
+	// СЃР°Рј РєРѕСЂР±Р°Р»СЊ СЃС‚СЂСѓРєСѓСЂР° - С‚РёРї(1,2,3,4) , РїРѕР·РёС†РёСЏ, РІРµРєС‚РѕСЂ СЃРѕСЃС‚РѕСЏРЅРёСЏ.
 	struct coord shipPositions[6][4];
 	for (int i = 0; i < 6; i++) {
 		for (int j = 0; j < 4; j++) {
